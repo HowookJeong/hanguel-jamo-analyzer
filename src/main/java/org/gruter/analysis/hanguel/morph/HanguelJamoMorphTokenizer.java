@@ -4,6 +4,23 @@ package org.gruter.analysis.hanguel.morph;
  * Created by hwjeong on 15. 11. 18..
  */
 public class HanguelJamoMorphTokenizer {
+
+  private volatile static HanguelJamoMorphTokenizer hanguelJamoMorphTokenizer;
+
+  private HanguelJamoMorphTokenizer() {
+  }
+
+  public static HanguelJamoMorphTokenizer getInstance() {
+    if ( hanguelJamoMorphTokenizer == null ) {
+      synchronized ( HanguelJamoMorphTokenizer.class ) {
+        if ( hanguelJamoMorphTokenizer == null ) {
+          hanguelJamoMorphTokenizer = new HanguelJamoMorphTokenizer();
+        }
+      }
+    }
+    return hanguelJamoMorphTokenizer;
+  }
+
   public static enum JAMO {
     CHOSUNG,
     JUNGSUNG,
@@ -32,9 +49,6 @@ public class HanguelJamoMorphTokenizer {
   private static final char ENGLISH_LOWER_END_UNICODE = 90;
   private static final char ENGLISH_UPPER_BEGIN_UNICODE = 97;
   private static final char ENGLISH_UPPER_END_UNICODE = 122;
-
-  public HanguelJamoMorphTokenizer() {
-  }
 
   private static boolean isPossibleCharacter(char c){
     if ((   (c >= NUMBER_BEGIN_UNICODE && c <= NUMBER_END_UNICODE)

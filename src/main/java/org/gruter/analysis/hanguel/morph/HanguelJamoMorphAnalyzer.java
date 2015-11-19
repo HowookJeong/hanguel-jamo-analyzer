@@ -10,7 +10,7 @@ public class HanguelJamoMorphAnalyzer {
 
   public static void main(String args[]) {
     String query = "Nike 청바지";
-    HanguelJamoMorphTokenizer tokenizer = new HanguelJamoMorphTokenizer();
+    HanguelJamoMorphTokenizer tokenizer = HanguelJamoMorphTokenizer.getInstance();
 
     String chosung = tokenizer.tokenizer(query, HanguelJamoMorphTokenizer.JAMO.CHOSUNG);
     String jungsung = tokenizer.tokenizer(query, HanguelJamoMorphTokenizer.JAMO.JUNGSUNG);
