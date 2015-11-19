@@ -12,9 +12,9 @@ public class HanguelJamoMorphAnalyzer {
     String query = "Nike 청바지";
     HanguelJamoMorphTokenizer tokenizer = HanguelJamoMorphTokenizer.getInstance();
 
-    String chosung = tokenizer.tokenizer(query, HanguelJamoMorphTokenizer.JAMO.CHOSUNG);
-    String jungsung = tokenizer.tokenizer(query, HanguelJamoMorphTokenizer.JAMO.JUNGSUNG);
-    String jongsung = tokenizer.tokenizer(query, HanguelJamoMorphTokenizer.JAMO.JONGSUNG);
+    String chosung = tokenizer.tokenizer(query, HanguelJamoType.CHOSUNG);
+    String jungsung = tokenizer.tokenizer(query, HanguelJamoType.JUNGSUNG);
+    String jongsung = tokenizer.tokenizer(query, HanguelJamoType.JONGSUNG);
 
     System.out.println("원문 : [" + query + "]");
     System.out.println("초성 : [" + chosung + "]");
