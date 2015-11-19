@@ -1,4 +1,4 @@
-package org.gruter.analysis.hangeul.morph;
+package org.gruter.analysis.hanguel.morph;
 
 /**
  * Created by hwjeong on 15. 11. 18..

@@ -1,9 +1,12 @@
-package org.gruter.analysis.hangeul.morph;
+package org.gruter.analysis.hanguel.morph;
 
 /**
  * Created by hwjeong on 15. 11. 18..
  */
 public class HanguelJamoMorphAnalyzer {
+
+  public HanguelJamoMorphAnalyzer() {
+  }
 
   public static void main(String args[]) {
     String query = "Nike 청바지";
