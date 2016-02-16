@@ -1,25 +1,33 @@
 package org.gruter.analysis.hanguel.morph;
 
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.analysis.util.CharacterUtils;
+import org.apache.lucene.util.AttributeFactory;
+
+import java.io.IOException;
+
 /**
  * Created by hwjeong on 15. 11. 18..
  */
-public class HanguelJamoMorphTokenizer {
-
-  private volatile static HanguelJamoMorphTokenizer hanguelJamoMorphTokenizer;
-
-  private HanguelJamoMorphTokenizer() {
+public class HanguelJamoMorphTokenizer extends Tokenizer {
+  public HanguelJamoMorphTokenizer() {
   }
 
-  public static HanguelJamoMorphTokenizer getInstance() {
-    if ( hanguelJamoMorphTokenizer == null ) {
-      synchronized ( HanguelJamoMorphTokenizer.class ) {
-        if ( hanguelJamoMorphTokenizer == null ) {
-          hanguelJamoMorphTokenizer = new HanguelJamoMorphTokenizer();
-        }
-      }
-    }
-    return hanguelJamoMorphTokenizer;
+  public HanguelJamoMorphTokenizer(AttributeFactory factory)
+  {
+    super(factory);
   }
+
+  private int offset = 0;
+  private int bufferIndex = 0;
+  private int dataLen = 0;
+  private int finalOffset = 0;
+  private final CharTermAttribute termAtt = (CharTermAttribute)addAttribute(CharTermAttribute.class);
+  private final OffsetAttribute offsetAtt = (OffsetAttribute)addAttribute(OffsetAttribute.class);
+  private final CharacterUtils charUtils = CharacterUtils.getInstance();
+  private final CharacterUtils.CharacterBuffer ioBuffer = CharacterUtils.newCharacterBuffer(4096);
 
   // {'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'}
   private static final char[] CHOSUNG =
@@ -33,16 +41,16 @@ public class HanguelJamoMorphTokenizer {
   private static final char[] JONGSUNG =
       {0x0000, 0x3131, 0x3132, 0x3133, 0x3134, 0x3135, 0x3136, 0x3137, 0x3139, 0x313a, 0x313b, 0x313c, 0x313d, 0x313e, 0x313f, 0x3140, 0x3141, 0x3142, 0x3144, 0x3145, 0x3146, 0x3147, 0x3148, 0x314a, 0x314b, 0x314c, 0x314d, 0x314e};
 
-  private static final char CHOSUNG_BEGIN_UNICODE = 12593;
-  private static final char CHOSUNG_END_UNICODE = 12622;
-  private static final char HANGUEL_BEGIN_UNICODE = 44032;
-  private static final char HANGUEL_END_UNICODE = 55203;
-  private static final char NUMBER_BEGIN_UNICODE = 48;
-  private static final char NUMBER_END_UNICODE = 57;
-  private static final char ENGLISH_LOWER_BEGIN_UNICODE = 65;
-  private static final char ENGLISH_LOWER_END_UNICODE = 90;
-  private static final char ENGLISH_UPPER_BEGIN_UNICODE = 97;
-  private static final char ENGLISH_UPPER_END_UNICODE = 122;
+  private static final char CHOSUNG_BEGIN_UNICODE = 12593;          // 'ㄱ'
+  private static final char CHOSUNG_END_UNICODE = 12622;            // 'ㅎ'
+  private static final char HANGUEL_BEGIN_UNICODE = 44032;          // '가'
+  private static final char HANGUEL_END_UNICODE = 55203;            // '힣'
+  private static final char NUMBER_BEGIN_UNICODE = 48;              // '0'
+  private static final char NUMBER_END_UNICODE = 57;                // '9'
+  private static final char ENGLISH_LOWER_BEGIN_UNICODE = 65;       // 'A'
+  private static final char ENGLISH_LOWER_END_UNICODE = 90;         // 'Z'
+  private static final char ENGLISH_UPPER_BEGIN_UNICODE = 97;       // 'a'
+  private static final char ENGLISH_UPPER_END_UNICODE = 122;        // 'z'
 
   private static boolean isPossibleCharacter(char c){
     if ((   (c >= NUMBER_BEGIN_UNICODE && c <= NUMBER_END_UNICODE)
@@ -150,5 +158,96 @@ public class HanguelJamoMorphTokenizer {
     }
 
     return jongsung;
+  }
+
+  protected int normalize(int c) {
+    return c;
+  }
+
+  @Override
+  public boolean incrementToken() throws IOException {
+    clearAttributes();
+    int length = 0;
+    int start = -1;
+    int end = -1;
+    char[] buffer = this.termAtt.buffer();
+    for (;;)
+    {
+      if (this.bufferIndex >= this.dataLen)
+      {
+        this.offset += this.dataLen;
+        this.charUtils.fill(this.ioBuffer, this.input);
+        if (this.ioBuffer.getLength() == 0)
+        {
+          this.dataLen = 0;
+          if (length <= 0)
+          {
+            this.finalOffset = correctOffset(this.offset);
+            return false;
+          }
+        }
+        else
+        {
+          this.dataLen = this.ioBuffer.getLength();
+          this.bufferIndex = 0;
+        }
+      }
+      else
+      {
+        int c = this.charUtils.codePointAt(this.ioBuffer.getBuffer(), this.bufferIndex, this.ioBuffer.getLength());
+        int charCount = Character.charCount(c);
+        this.bufferIndex += charCount;
+
+        if (isPossibleCharacter((char)c))
+        {
+          if (length == 0)
+          {
+            assert (start == -1);
+            start = this.offset + this.bufferIndex - charCount;
+            end = start;
+          }
+          else if (length >= buffer.length - 1)
+          {
+            buffer = this.termAtt.resizeBuffer(2 + length);
+          }
+          end += charCount;
+          length += Character.toChars(normalize(c), buffer, length);
+          if (length >= 255) {
+            break;
+          }
+        }
+        else
+        {
+          if (length > 0) {
+            break;
+          }
+        }
+      }
+    }
+
+    this.termAtt.setLength(length);
+    assert (start != -1);
+    this.offsetAtt.setOffset(correctOffset(start), this.finalOffset = correctOffset(end));
+
+    String chosungAtt = chosungTokenizer(this.termAtt.toString());
+    this.termAtt.setEmpty();
+    this.termAtt.append(chosungAtt.toLowerCase());
+
+    return true;
+  }
+
+  public final void end() throws IOException {
+    super.end();
+
+    this.offsetAtt.setOffset(this.finalOffset, this.finalOffset);
+  }
+
+  public void reset() throws IOException {
+    super.reset();
+    this.bufferIndex = 0;
+    this.offset = 0;
+    this.dataLen = 0;
+    this.finalOffset = 0;
+    this.ioBuffer.reset();
   }
 }
