@@ -33,6 +33,14 @@ public class HanguelJamoMorphTokenizer {
   private static final char[] JONGSUNG =
       {0x0000, 0x3131, 0x3132, 0x3133, 0x3134, 0x3135, 0x3136, 0x3137, 0x3139, 0x313a, 0x313b, 0x313c, 0x313d, 0x313e, 0x313f, 0x3140, 0x3141, 0x3142, 0x3144, 0x3145, 0x3146, 0x3147, 0x3148, 0x314a, 0x314b, 0x314c, 0x314d, 0x314e};
 
+  private static final String[] CHOSUNG_EN = { "r", "R", "s", "e", "E", "f", "a", "q", "Q", "t", "T", "d", "w", "W", "c", "z", "x", "v", "g" };
+
+  private static final String[] JUNGSUNG_EN = { "k", "o", "i", "O", "j", "p", "u", "P", "h", "hk", "ho", "hl", "y", "n", "nj", "np", "nl", "b", "m", "ml", "l" };
+
+  private static String[] JONGSUNG_EN = { "", "r", "R", "rt", "s", "sw", "sg", "e", "f", "fr", "fa", "fq", "ft", "fx", "fv", "fg", "a", "q", "qt", "t", "T", "d", "w", "c", "z", "x", "v", "g" };
+
+  private static String[] LETTER_EN = { "r", "R", "rt", "s", "sw", "sg", "e","E" ,"f", "fr", "fa", "fq", "ft", "fx", "fv", "fg", "a", "q","Q", "qt", "t", "T", "d", "w", "W", "c", "z", "x", "v", "g" };
+
   private static final char CHOSUNG_BEGIN_UNICODE = 12593;
   private static final char CHOSUNG_END_UNICODE = 12622;
   private static final char HANGUEL_BEGIN_UNICODE = 44032;
@@ -83,6 +91,9 @@ public class HanguelJamoMorphTokenizer {
       case JONGSUNG:
         jamo = jongsungTokenizer(source);
         break;
+      case KORTOENG:
+        jamo = convertKoreanToEnglish(source);
+        break;
       default:
         jamo = chosungTokenizer(source);
     }
@@ -92,13 +103,16 @@ public class HanguelJamoMorphTokenizer {
 
   public String chosungTokenizer(String source) {
     String chosung = "";
+    int criteria;
+    char sourceChar;
+    char choIdx;
 
     for(int i = 0 ; i < source.length(); i++) {
-      char sourceChar = source.charAt(i);
+      sourceChar = source.charAt(i);
 
       if(sourceChar >= 0xAC00) {
-        int criteia = (sourceChar - 0xAC00);
-        char choIdx = (char)(((criteia - (criteia%28))/28)/21);
+        criteria = (sourceChar - 0xAC00);
+        choIdx = (char)(((criteria - (criteria%28))/28)/21);
 
         chosung = chosung + CHOSUNG[choIdx];
       } else {
@@ -113,13 +127,16 @@ public class HanguelJamoMorphTokenizer {
 
   public String jungsungTokenizer(String source) {
     String jungsung = "";
+    int criteria;
+    char sourceChar;
+    char jungIdx;
 
     for(int i = 0 ; i < source.length(); i++) {
-      char sourceChar = source.charAt(i);
+      sourceChar = source.charAt(i);
 
       if(sourceChar >= 0xAC00) {
-        int criteia = (sourceChar - 0xAC00);
-        char jungIdx = (char)(((criteia - (criteia%28))/28)%21);
+        criteria = (sourceChar - 0xAC00);
+        jungIdx = (char)(((criteria - (criteria%28))/28)%21);
 
         jungsung = jungsung + JUNGSUNG[jungIdx];
       } else {
@@ -134,12 +151,14 @@ public class HanguelJamoMorphTokenizer {
 
   public String jongsungTokenizer(String source) {
     String jongsung = "";
+    char sourceChar;
+    char jongIdx;
 
     for(int i = 0 ; i < source.length(); i++) {
-      char sourceChar = source.charAt(i);
+      sourceChar = source.charAt(i);
 
       if(sourceChar >= 0xAC00) {
-        char jongIdx = (char)((sourceChar - 0xAC00)%28);
+        jongIdx = (char)((sourceChar - 0xAC00)%28);
 
         jongsung = jongsung + JONGSUNG[jongIdx];
       } else {
@@ -150,5 +169,36 @@ public class HanguelJamoMorphTokenizer {
     }
 
     return jongsung;
+  }
+
+  public String convertKoreanToEnglish(String source) {
+    String english = "";
+    char sourceChar;
+    int choIdx;
+    int jungIdx;
+    int jongIdx;
+    int criteria;
+
+    for(int i = 0 ; i < source.length(); i++) {
+      sourceChar = source.charAt(i);
+      criteria = sourceChar - 0xAC00;
+      choIdx = criteria / (21 * 28);
+      jungIdx = criteria % (21 * 28) / 28;
+      jongIdx = criteria % (21 * 28) % 28;
+
+      if(sourceChar >= 0xAC00) {
+        english = english + CHOSUNG_EN[choIdx] + JUNGSUNG_EN[jungIdx];
+
+        if (jongIdx != 0x0000) {
+          english =  english + JONGSUNG_EN[jongIdx];
+        }
+      } else {
+        if (isPossibleCharacter(sourceChar) ) {
+          english = english + sourceChar;
+        }
+      }
+    }
+
+    return english;
   }
 }

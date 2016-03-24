@@ -6,5 +6,6 @@ package org.gruter.analysis.hanguel.morph;
 public enum HanguelJamoType {
   CHOSUNG,
   JUNGSUNG,
-  JONGSUNG
+  JONGSUNG,
+  KORTOENG
 }
