@@ -65,7 +65,7 @@ public class HanguelJamoMorphTokenizer {
     }
   }
 
-  public String tokenizer(String source, HanguelJamoType jamoType) {
+  public String tokenizer(String source, String jamoType) {
     String jamo = "";
 
     /*
@@ -82,16 +82,16 @@ public class HanguelJamoMorphTokenizer {
     */
 
     switch ( jamoType ) {
-      case CHOSUNG:
+      case "CHOSUNG":
         jamo = chosungTokenizer(source);
         break;
-      case JUNGSUNG:
+      case "JUNGSUNG":
         jamo = jungsungTokenizer(source);
         break;
-      case JONGSUNG:
+      case "JONGSUNG":
         jamo = jongsungTokenizer(source);
         break;
-      case KORTOENG:
+      case "KORTOENG":
         jamo = convertKoreanToEnglish(source);
         break;
       default:
